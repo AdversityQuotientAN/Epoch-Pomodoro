@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import './HomePage.scss'
+// import 'bootstrap/dist/css/bootstrap.min.css'
 
 type TimeType = {
     hours: number,
@@ -44,6 +45,7 @@ class Time {
 const HomePage = () => {
 
     const [isRunning, setIsRunnning] = useState(false)
+    const [isWorkTime, setIsWorkTime] = useState(true)
     const [elapsedTime, setElapsedTime] = useState(0)
     const [elapsedBreakTime, setElapsedBreakTime] = useState(0)
     const intervalIdRef = useRef(0)
@@ -54,13 +56,21 @@ const HomePage = () => {
     const [breakTime, setBreakTime] = useState<TimeType>({ hours: 0, minutes: 0, seconds: 0, milliseconds: 0 })
     const startTimeInMillseconds = startTimeObj.milliseconds + startTimeObj.seconds * 1000 + startTimeObj.minutes * 1000 * 60 + startTimeObj.hours * 1000 * 3600
     const breakTimeInMillseconds = breakTime.milliseconds + breakTime.seconds * 1000 + breakTime.minutes * 1000 * 60 + breakTime.hours * 1000 * 3600
+    const bottomRef = useRef(null)
 
     useEffect(() => {
 
         if (isRunning) {
-            intervalIdRef.current = setInterval(() => {
-                setElapsedTime(Date.now() - startTimeRef.current)
-            }, 10)
+            if (isWorkTime) {
+                intervalIdRef.current = setInterval(() => {
+                    setElapsedTime(Date.now() - startTimeRef.current)
+                }, 10)
+            }
+            else {
+                intervalIdRef.current = setInterval(() => {
+                    setElapsedBreakTime(Date.now() - breakTimeRef.current)
+                }, 10)
+            }
         }
 
         return () => {
@@ -69,10 +79,19 @@ const HomePage = () => {
 
     }, [isRunning])
 
+    // useEffect(() => {
+    //     bottomRef.current.scrollIntoView({ behavior: 'smooth' })
+    // }, [isWorkTime])
+
     const start = () => {
         
         setIsRunnning(true)
-        startTimeRef.current = Date.now() - elapsedTime
+        if (isWorkTime) {
+            startTimeRef.current = Date.now() - elapsedTime
+        }
+        else {
+            breakTimeRef.current = Date.now() - elapsedBreakTime
+        }
     }
     const pause = () => {
 
@@ -81,11 +100,13 @@ const HomePage = () => {
     const reset = () => {
 
         setElapsedTime(0)
+        setElapsedBreakTime(0)
         setIsRunnning(false)
     }
 
-    const resetStartTime = () => {
+    const resetTimes = () => {
         setStartTimeObj({ hours: 0, minutes: 0, seconds: 0, milliseconds: 0 })
+        setBreakTime({ hours: 0, minutes: 0, seconds: 0, milliseconds: 0 })
     }
 
     const changeWorkTime = (e) => {
@@ -121,6 +142,8 @@ const HomePage = () => {
         if (isRunning && elapsedTime >= startTimeInMillseconds) {
             setIsRunnning(false)
             setElapsedTime(0)
+            setIsWorkTime(false)
+            bottomRef.current.scrollIntoView({ behavior: 'smooth' })
             // console.log("Done!")
         }
 
@@ -141,6 +164,7 @@ const HomePage = () => {
         if (isRunning && elapsedBreakTime >= startTimeInMillseconds) {
             setIsRunnning(false)
             setElapsedBreakTime(0)
+            setIsWorkTime(true)
             // console.log("Done!")
         }
 
@@ -158,39 +182,48 @@ const HomePage = () => {
     }
 
     return (
-        <div className='pomodoro'>
-            <div className='display'>{formatWorkTime()}</div>
-            <div className='breakDisplay'>{formatBreakTime()}</div>
-            <div className='controls'>
-                <button onClick={start} className='button-start'>Start</button>
-                <button onClick={pause} className='button-pause'>Pause</button>
-                <button onClick={reset} className='button-reset'>Stop</button>
+        <>
+            <div className='pomodoro'>
+                <div>
+                    <button className='typeButton' onClick={() => setIsWorkTime(prev => !prev)}>{isWorkTime ? 'Work time' : 'Break time'}</button>
+                </div>
+                <div className='display'>{formatWorkTime()}</div>
+                <div className='breakDisplay'>{formatBreakTime()}</div>
+                <div className='controls'>
+                    <button onClick={start} className='button-start'>Start</button>
+                    <button onClick={pause} className='button-pause'>Pause</button>
+                    <button onClick={reset} className='button-reset'>Stop</button>
+                </div>
+                <div className='templateContainer'>
+                    <button className='template-button' onClick={() => {resetTimes(); setStartTimeObj(prev => ({...prev, minutes: 30}))}}>30 minutes</button>
+                    <button className='template-button' onClick={() => {resetTimes(); setStartTimeObj(prev => ({...prev, seconds: 10}))}}>10 seconds</button>
+                </div>
+                <div className='setTimeContainer'>
+                    <h3>Set work time</h3>
+                    <label>Hours:</label>
+                    <input type='number' name='hours' min={0} value={startTimeObj.hours} onChange={changeWorkTime}></input>
+                    <label>Minutes:</label>
+                    <input type='number' name='minutes' min={0} max={59} value={startTimeObj.minutes} onChange={changeWorkTime}></input>
+                    <label>Seconds:</label>
+                    <input type='number' name='seconds' min={0} max={59} value={startTimeObj.seconds} onChange={changeWorkTime}></input>
+                    <label>Milliseconds:</label>
+                    <input type='number' name='milliseconds' min={0} max={999} value={startTimeObj.milliseconds} onChange={changeWorkTime}></input>
+                    <h3>Set break time</h3>
+                    <label>Hours:</label>
+                    <input type='number' name='hours' min={0} value={breakTime.hours} onChange={changeBreakTime}></input>
+                    <label>Minutes:</label>
+                    <input type='number' name='minutes' min={0} max={59} value={breakTime.minutes} onChange={changeBreakTime}></input>
+                    <label>Seconds:</label>
+                    <input type='number' name='seconds' min={0} max={59} value={breakTime.seconds} onChange={changeBreakTime}></input>
+                    <label>Milliseconds:</label>
+                    <input type='number' name='milliseconds' min={0} max={999} value={breakTime.milliseconds} onChange={changeBreakTime}></input>
+                </div>
             </div>
-            <div className='templateContainer'>
-                <button className='template-button' onClick={() => {resetStartTime(); setStartTimeObj(prev => ({...prev, minutes: 30}))}}>30 minutes</button>
-                <button className='template-button' onClick={() => {resetStartTime(); setStartTimeObj(prev => ({...prev, seconds: 10}))}}>10 seconds</button>
+            <div className='videoContainer'>
+                <iframe src="https://www.youtube.com/embed/XYA1D5hHvPA?si=Dh5tCuERi0ICImiC" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
             </div>
-            <div className='setTimeContainer'>
-                <h3>Set work time</h3>
-                <label>Hours:</label>
-                <input type='number' name='hours' min={0} value={startTimeObj.hours} onChange={changeWorkTime}></input>
-                <label>Minutes:</label>
-                <input type='number' name='minutes' min={0} max={59} value={startTimeObj.minutes} onChange={changeWorkTime}></input>
-                <label>Seconds:</label>
-                <input type='number' name='seconds' min={0} max={59} value={startTimeObj.seconds} onChange={changeWorkTime}></input>
-                <label>Milliseconds:</label>
-                <input type='number' name='milliseconds' min={0} max={999} value={startTimeObj.milliseconds} onChange={changeWorkTime}></input>
-                <h3>Set break time</h3>
-                <label>Hours:</label>
-                <input type='number' name='hours' min={0} value={breakTime.hours} onChange={changeBreakTime}></input>
-                <label>Minutes:</label>
-                <input type='number' name='minutes' min={0} max={59} value={breakTime.minutes} onChange={changeBreakTime}></input>
-                <label>Seconds:</label>
-                <input type='number' name='seconds' min={0} max={59} value={breakTime.seconds} onChange={changeBreakTime}></input>
-                <label>Milliseconds:</label>
-                <input type='number' name='milliseconds' min={0} max={999} value={breakTime.milliseconds} onChange={changeBreakTime}></input>
-            </div>
-        </div>
+            <div className='bottomContainer' ref={bottomRef} />
+        </>
     )
 }
 
