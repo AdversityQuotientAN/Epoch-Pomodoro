@@ -51,7 +51,6 @@ const HomePage = () => {
     const intervalIdRef = useRef(0)
     const startTimeRef = useRef(0)
     const breakTimeRef = useRef(0)
-    const [startTime, setStartTime] = useState<Time>(new Time())
     const [startTimeObj, setStartTimeObj] = useState<TimeType>({ hours: 0, minutes: 0, seconds: 0, milliseconds: 0 })
     const [breakTime, setBreakTime] = useState<TimeType>({ hours: 0, minutes: 0, seconds: 0, milliseconds: 0 })
     const startTimeInMillseconds = startTimeObj.milliseconds + startTimeObj.seconds * 1000 + startTimeObj.minutes * 1000 * 60 + startTimeObj.hours * 1000 * 3600
@@ -61,27 +60,21 @@ const HomePage = () => {
     useEffect(() => {
 
         if (isRunning) {
-            if (isWorkTime) {
-                intervalIdRef.current = setInterval(() => {
+            intervalIdRef.current = setInterval(() => {
+                if (isWorkTime) {
                     setElapsedTime(Date.now() - startTimeRef.current)
-                }, 10)
-            }
-            else {
-                intervalIdRef.current = setInterval(() => {
+                }
+                else {
                     setElapsedBreakTime(Date.now() - breakTimeRef.current)
-                }, 10)
-            }
+                }
+            }, 10)
         }
 
         return () => {
             clearInterval(intervalIdRef.current)
         }
 
-    }, [isRunning])
-
-    // useEffect(() => {
-    //     bottomRef.current.scrollIntoView({ behavior: 'smooth' })
-    // }, [isWorkTime])
+    }, [isRunning, isWorkTime])
 
     const start = () => {
         
@@ -139,12 +132,13 @@ const HomePage = () => {
 
     const formatWorkTime = () => {
         
-        if (isRunning && elapsedTime >= startTimeInMillseconds) {
-            setIsRunnning(false)
+        if (isRunning && isWorkTime && elapsedTime >= startTimeInMillseconds) {
             setElapsedTime(0)
             setIsWorkTime(false)
-            bottomRef.current.scrollIntoView({ behavior: 'smooth' })
-            // console.log("Done!")
+            breakTimeRef.current = Date.now() - elapsedBreakTime
+            setTimeout(() => {
+                bottomRef.current.scrollIntoView({ behavior: 'smooth' })
+            }, 500)
         }
 
         let hours = Math.floor((startTimeInMillseconds - elapsedTime) / (1000 * 60 * 60))
@@ -161,11 +155,10 @@ const HomePage = () => {
     }
     const formatBreakTime = () => {
         
-        if (isRunning && elapsedBreakTime >= startTimeInMillseconds) {
-            setIsRunnning(false)
+        if (isRunning && !isWorkTime && elapsedBreakTime >= breakTimeInMillseconds) {
             setElapsedBreakTime(0)
             setIsWorkTime(true)
-            // console.log("Done!")
+            startTimeRef.current = Date.now() - elapsedTime
         }
 
         let hours = Math.floor((breakTimeInMillseconds - elapsedBreakTime) / (1000 * 60 * 60))
@@ -219,10 +212,14 @@ const HomePage = () => {
                     <input type='number' name='milliseconds' min={0} max={999} value={breakTime.milliseconds} onChange={changeBreakTime}></input>
                 </div>
             </div>
-            <div className='videoContainer'>
-                <iframe src="https://www.youtube.com/embed/XYA1D5hHvPA?si=Dh5tCuERi0ICImiC" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-            </div>
-            <div className='bottomContainer' ref={bottomRef} />
+            {!isWorkTime &&
+            <>
+                <div className='videoContainer'>
+                    <iframe src="https://www.theepochtimes.com/epochtv/can-our-brains-change-the-dr-monti-show-5082010?utm_source=ref_share&utm_campaign=copy" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen></iframe>
+                    <div className='breakDisplay'>{formatBreakTime()}</div>
+                </div>
+                <div className='bottomContainer' ref={bottomRef} />
+            </>}
         </>
     )
 }

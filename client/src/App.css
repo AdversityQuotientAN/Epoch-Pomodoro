@@ -4,6 +4,7 @@
   padding: 2rem;
   text-align: center;
   max-height: 960px;
+  overflow-y: hidden;
 }
 
 body {
