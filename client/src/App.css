@@ -1,16 +1,16 @@
 #root {
   max-width: 1280px;
   margin: auto auto;
-  padding: 2rem;
+  /* padding: 2rem; */
   text-align: center;
   max-height: 960px;
-  overflow-y: hidden;
+  /* overflow-y: hidden; */
 }
 
 body {
-  display: flex;
+  /* display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: center; */
 }
 
 @keyframes logo-spin {

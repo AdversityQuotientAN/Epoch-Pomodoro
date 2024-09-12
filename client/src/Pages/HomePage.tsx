@@ -1,5 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './HomePage.scss'
+import { FaSun } from "react-icons/fa";
+import { FaMoon } from "react-icons/fa";
+import { videos } from '../constants';
 // import 'bootstrap/dist/css/bootstrap.min.css'
 
 type TimeType = {
@@ -7,39 +10,6 @@ type TimeType = {
     minutes: number,
     seconds: number,
     milliseconds: number
-}
-
-class Time {
-
-    hours
-    minutes
-    seconds
-    milliseconds
-
-    constructor() {
-        this.hours = 0
-        this.minutes = 0
-        this.seconds = 0
-        this.milliseconds = 0
-    }
-
-    setHours = (hours: number) => {
-        this.hours = hours
-    }
-    setMinutes = (minutes: number) => {
-        this.minutes = minutes
-    }
-    setSeconds = (seconds: number) => {
-        this.seconds = seconds
-    }
-    setMilliseconds = (milliseconds: number) => {
-        this.milliseconds = milliseconds
-    }
-
-    inMilliseconds = (): number => {
-
-        return this.milliseconds + this.seconds * 1000 + this.minutes * 1000 * 60 + this.hours * 1000 * 3600
-    }
 }
 
 const HomePage = () => {
@@ -55,7 +25,10 @@ const HomePage = () => {
     const [breakTime, setBreakTime] = useState<TimeType>({ hours: 0, minutes: 0, seconds: 0, milliseconds: 0 })
     const startTimeInMillseconds = startTimeObj.milliseconds + startTimeObj.seconds * 1000 + startTimeObj.minutes * 1000 * 60 + startTimeObj.hours * 1000 * 3600
     const breakTimeInMillseconds = breakTime.milliseconds + breakTime.seconds * 1000 + breakTime.minutes * 1000 * 60 + breakTime.hours * 1000 * 3600
-    const bottomRef = useRef(null)
+    const bottomRef = useRef()
+    const [isLightMode, setIsLightMode] = useState(true)
+    const backgroundImage = isLightMode ? 'images/background.jpg' : 'images/background1.jpg'
+    const [currVideoNum, setCurrVideoNum] = useState(0)
 
     useEffect(() => {
 
@@ -102,7 +75,7 @@ const HomePage = () => {
         setBreakTime({ hours: 0, minutes: 0, seconds: 0, milliseconds: 0 })
     }
 
-    const changeWorkTime = (e) => {
+    const changeWorkTime = (e: { target: { value: string; name: string } }) => {
 
         const newVal = parseInt(e.target.value)
         if (isNaN(newVal)) {
@@ -113,9 +86,8 @@ const HomePage = () => {
             ...prev,
             [e.target.name]: newVal
         }))
-        // console.log(startTimeObj)
     }
-    const changeBreakTime = (e) => {
+    const changeBreakTime = (e: { target: { value: string; name: string } }) => {
 
         const newVal = parseInt(e.target.value)
         if (isNaN(newVal)) {
@@ -126,7 +98,6 @@ const HomePage = () => {
             ...prev,
             [e.target.name]: newVal
         }))
-        // console.log(startTimeObj)
     }
 
 
@@ -136,15 +107,16 @@ const HomePage = () => {
             setElapsedTime(0)
             setIsWorkTime(false)
             breakTimeRef.current = Date.now() - elapsedBreakTime
+            setCurrVideoNum(prev => (prev + 1) % videos.length)
             setTimeout(() => {
                 bottomRef.current.scrollIntoView({ behavior: 'smooth' })
             }, 500)
         }
 
-        let hours = Math.floor((startTimeInMillseconds - elapsedTime) / (1000 * 60 * 60))
-        let minutes = Math.floor((startTimeInMillseconds - elapsedTime) / (1000 * 60) % 60)
-        let seconds = Math.floor((startTimeInMillseconds - elapsedTime) / 1000 % 60)
-        let milliseconds = Math.floor(((startTimeInMillseconds - elapsedTime) % 1000))
+        let hours: number | string = Math.floor((startTimeInMillseconds - elapsedTime) / (1000 * 60 * 60))
+        let minutes: number | string = Math.floor((startTimeInMillseconds - elapsedTime) / (1000 * 60) % 60)
+        let seconds: number | string = Math.floor((startTimeInMillseconds - elapsedTime) / 1000 % 60)
+        let milliseconds: number | string = Math.floor(((startTimeInMillseconds - elapsedTime) % 1000))
 
         hours = String(hours).padStart(2, '0')
         minutes = String(minutes).padStart(2, '0')
@@ -161,10 +133,10 @@ const HomePage = () => {
             startTimeRef.current = Date.now() - elapsedTime
         }
 
-        let hours = Math.floor((breakTimeInMillseconds - elapsedBreakTime) / (1000 * 60 * 60))
-        let minutes = Math.floor((breakTimeInMillseconds - elapsedBreakTime) / (1000 * 60) % 60)
-        let seconds = Math.floor((breakTimeInMillseconds - elapsedBreakTime) / 1000 % 60)
-        let milliseconds = Math.floor(((breakTimeInMillseconds - elapsedBreakTime) % 1000))
+        let hours: number | string = Math.floor((breakTimeInMillseconds - elapsedBreakTime) / (1000 * 60 * 60))
+        let minutes: number | string = Math.floor((breakTimeInMillseconds - elapsedBreakTime) / (1000 * 60) % 60)
+        let seconds: number | string = Math.floor((breakTimeInMillseconds - elapsedBreakTime) / 1000 % 60)
+        let milliseconds: number | string = Math.floor(((breakTimeInMillseconds - elapsedBreakTime) % 1000))
 
         hours = String(hours).padStart(2, '0')
         minutes = String(minutes).padStart(2, '0')
@@ -174,8 +146,19 @@ const HomePage = () => {
         return `${hours}:${minutes}:${seconds}:${milliseconds}`
     }
 
+    const setLightMode = () => {
+        setIsLightMode(prev => !prev)
+    }
+
     return (
-        <>
+        <div
+            className='pomodoroBody'
+            style={{ backgroundImage: `url(${backgroundImage})`,
+            height: `${isWorkTime ? '100vh' : '202.5vh' }` }}
+        >
+            <div className='lightButtonContainer'>
+                <button onClick={setLightMode} className='lightButton'>{isLightMode ? <FaSun size='2rem' /> : <FaMoon size='2rem' />}</button>
+            </div>
             <div className='pomodoro'>
                 <div>
                     <button className='typeButton' onClick={() => setIsWorkTime(prev => !prev)}>{isWorkTime ? 'Work time' : 'Break time'}</button>
@@ -215,12 +198,12 @@ const HomePage = () => {
             {!isWorkTime &&
             <>
                 <div className='videoContainer'>
-                    <iframe src="https://www.theepochtimes.com/epochtv/can-our-brains-change-the-dr-monti-show-5082010?utm_source=ref_share&utm_campaign=copy" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen></iframe>
+                    <iframe src={videos[currVideoNum]} title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen></iframe>
                     <div className='breakDisplay'>{formatBreakTime()}</div>
                 </div>
                 <div className='bottomContainer' ref={bottomRef} />
             </>}
-        </>
+        </div>
     )
 }
 
